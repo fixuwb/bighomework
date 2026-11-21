@@ -1,0 +1,1490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Global Engineering &amp; Science Expedition — Interactive Map &amp; Dialogues</title>
+  <style>
+    :root {
+      --bg-page: #f8fafc;
+      --ink-dark: #0f172a;
+      --ink-muted: #475569;
+      --blue-active: #0078ff;
+      --blue-hover: #0056c7;
+      --border-soft: #cbd5e1;
+      --accent-red: #dc2626;
+      --accent-green: #15803d;
+      --shadow-card: 0 10px 26px -6px rgba(15, 23, 42, 0.14);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-page);
+      color: var(--ink-dark);
+      line-height: 1.55;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: #ffffff;
+      border-bottom: 1px solid var(--border-soft);
+      padding: 0.85rem 1.5rem;
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05);
+    }
+
+    .header-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .brand h1 {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--ink-dark);
+    }
+
+    .brand p {
+      font-size: 0.82rem;
+      color: var(--ink-muted);
+    }
+
+    .stats-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .stat-badge {
+      background: #f1f5f9;
+      border: 1px solid var(--border-soft);
+      padding: 0.35rem 0.8rem;
+      border-radius: 999px;
+      font-size: 0.86rem;
+      font-weight: 700;
+      color: var(--ink-dark);
+    }
+
+    .stat-badge span {
+      color: var(--blue-active);
+    }
+
+    .btn-reset {
+      background: #ffffff;
+      color: var(--accent-red);
+      border: 1px solid #fca5a5;
+      padding: 0.38rem 0.85rem;
+      border-radius: 8px;
+      font-size: 0.84rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.18s ease;
+    }
+
+    .btn-reset:hover {
+      background: var(--accent-red);
+      color: #ffffff;
+      border-color: var(--accent-red);
+    }
+
+    main {
+      max-width: 1280px;
+      width: 100%;
+      margin: 1.25rem auto;
+      padding: 0 1.25rem;
+      flex: 1;
+    }
+
+    .map-card {
+      background: #ffffff;
+      border: 1px solid var(--border-soft);
+      border-radius: 16px;
+      padding: 1rem;
+      box-shadow: var(--shadow-card);
+    }
+
+    .map-top-bar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.65rem;
+      padding: 0 0.25rem;
+    }
+
+    .map-hint {
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--ink-dark);
+    }
+
+    .map-hint strong {
+      color: var(--blue-active);
+    }
+
+    .map-stage {
+      position: relative;
+      width: 100%;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #ffffff;
+    }
+
+    .map-stage img.map-bg {
+      display: block;
+      width: 100%;
+      height: auto;
+      user-select: none;
+    }
+
+    .hotspot-btn {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 120, 255, 0.08);
+      border: 2px solid transparent;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all 0.16s ease;
+      padding: 0;
+    }
+
+    .hotspot-btn:hover,
+    .hotspot-btn:focus-visible {
+      background: rgba(0, 120, 255, 0.24);
+      border-color: var(--blue-hover);
+      box-shadow: 0 0 0 3px rgba(0, 120, 255, 0.22);
+    }
+
+    .hotspot-btn.completed-spot::after {
+      content: "✓";
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--accent-green);
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid #ffffff;
+    }
+
+    .img-missing-note {
+      display: none;
+      padding: 1.5rem;
+      text-align: center;
+      color: #991b1b;
+      background: #fef2f2;
+      font-weight: 600;
+    }
+
+    .dialogue-panel {
+      display: none;
+      background: #ffffff;
+      border: 1px solid var(--border-soft);
+      border-radius: 16px;
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+      animation: fadeSlide 0.24s ease;
+    }
+
+    .dialogue-panel.active {
+      display: block;
+    }
+
+    @keyframes fadeSlide {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .dialogue-header {
+      background: linear-gradient(135deg, #0f172a 0%, #0056c7 100%);
+      color: #ffffff;
+      padding: 1.15rem 1.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .dialogue-country-tag {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #bae6fd;
+      font-weight: 700;
+    }
+
+    .dialogue-header h2 {
+      font-size: 1.35rem;
+      font-weight: 800;
+    }
+
+    .btn-back-map {
+      background: rgba(255, 255, 255, 0.15);
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      padding: 0.45rem 0.95rem;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .btn-back-map:hover {
+      background: rgba(255, 255, 255, 0.28);
+    }
+
+    .dialogue-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.3fr;
+      gap: 1.5rem;
+      padding: 1.5rem;
+    }
+
+    @media (max-width: 900px) {
+      .dialogue-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .context-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 1.15rem;
+    }
+
+    .context-box h3 {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--blue-active);
+      margin-bottom: 0.65rem;
+    }
+
+    .context-box p {
+      font-size: 0.95rem;
+      color: #334155;
+      margin-bottom: 0.75rem;
+    }
+
+    .grammar-pill {
+      display: inline-block;
+      background: #dbeafe;
+      color: #1e3a8a;
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 0.28rem 0.65rem;
+      border-radius: 6px;
+    }
+
+    .chat-box {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .step-indicator {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--blue-hover);
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      padding: 0.35rem 0.75rem;
+      border-radius: 8px;
+      align-self: flex-start;
+    }
+
+    .chat-thread {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      max-height: 360px;
+      overflow-y: auto;
+      padding-right: 0.25rem;
+    }
+
+    .msg-row {
+      display: flex;
+      flex-direction: column;
+      max-width: 92%;
+    }
+
+    .msg-row.colleague {
+      align-self: flex-start;
+    }
+
+    .msg-row.user {
+      align-self: flex-end;
+    }
+
+    .msg-sender {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--ink-muted);
+      margin-bottom: 0.2rem;
+      padding: 0 0.25rem;
+    }
+
+    .msg-row.user .msg-sender {
+      text-align: right;
+      color: var(--blue-hover);
+    }
+
+    .msg-bubble {
+      padding: 0.78rem 1rem;
+      border-radius: 14px;
+      font-size: 0.94rem;
+      line-height: 1.45;
+    }
+
+    .msg-row.colleague .msg-bubble {
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      color: var(--ink-dark);
+      border-bottom-left-radius: 4px;
+    }
+
+    .msg-row.user .msg-bubble {
+      background: var(--blue-active);
+      color: #ffffff;
+      border-bottom-right-radius: 4px;
+    }
+
+    .msg-row.colleague.coach-reply .msg-bubble {
+      background: #fef2f2;
+      border-color: #fca5a5;
+      color: #7f1d1d;
+    }
+
+    .msg-row.colleague.ok-reply .msg-bubble {
+      background: #f0fdf4;
+      border-color: #86efac;
+      color: #14532d;
+    }
+
+    .replies-area {
+      border-top: 1px solid #e2e8f0;
+      padding-top: 0.9rem;
+    }
+
+    .replies-label {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--ink-muted);
+      margin-bottom: 0.55rem;
+    }
+
+    .reply-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+    }
+
+    .reply-btn {
+      text-align: left;
+      background: #ffffff;
+      border: 2px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 0.7rem 0.95rem;
+      font-size: 0.92rem;
+      font-weight: 500;
+      color: var(--ink-dark);
+      cursor: pointer;
+      transition: all 0.16s ease;
+      font-family: inherit;
+    }
+
+    .reply-btn:hover:not(:disabled) {
+      border-color: var(--blue-active);
+      background: #eff6ff;
+    }
+
+    .reply-btn.picked-wrong {
+      border-color: #fca5a5;
+      background: #fef2f2;
+      color: #991b1b;
+      opacity: 0.72;
+    }
+
+    .reply-btn.picked-right {
+      border-color: #16a34a;
+      background: #f0fdf4;
+      color: #14532d;
+      font-weight: 700;
+    }
+
+    .reply-btn:disabled {
+      cursor: default;
+    }
+
+    .after-dialogue-bar {
+      margin-top: 0.9rem;
+      display: none;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .after-dialogue-bar.visible {
+      display: flex;
+    }
+
+    .btn-continue-map {
+      background: var(--accent-green);
+      color: #ffffff;
+      border: none;
+      border-radius: 10px;
+      padding: 0.78rem 1.2rem;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .btn-continue-map:hover {
+      background: #166534;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="brand">
+        <h1>Global Engineering &amp; Science Expedition</h1>
+        <p>Click any of the 12 blue countries on your map • 5 dialogue questions per country</p>
+      </div>
+      <div class="stats-bar">
+        <div class="stat-badge">Countries Visited: <span id="visited-count">0</span> / 12</div>
+        <div class="stat-badge">Dialogues Completed: <span id="completed-count">0</span> / 12</div>
+        <button type="button" class="btn-reset" id="reset-btn">Reset Progress</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="map-card" id="map-section">
+      <div class="map-top-bar">
+        <div class="map-hint">
+          All <strong>12 blue countries</strong> are active — click any blue area or label to start the 5-step dialogue.
+        </div>
+      </div>
+
+      <div class="map-stage" id="map-stage">
+        <img
+          src="world_map.png"
+          alt="World map with 12 blue countries"
+          class="map-bg"
+          id="world-map-img"
+          onerror="document.getElementById('img-missing-note').style.display='block';"
+        />
+        <div class="img-missing-note" id="img-missing-note">
+          Place your map image file named <strong>world_map.png</strong> in the same folder as <strong>index.html</strong>.
+        </div>
+        <div id="hotspots-layer"></div>
+      </div>
+    </section>
+
+    <section class="dialogue-panel" id="dialogue-panel" aria-live="polite">
+      <div class="dialogue-header">
+        <div>
+          <div class="dialogue-country-tag" id="d-country-tag">United Kingdom • Unit 1</div>
+          <h2 id="d-topic-title">Higher Education &amp; The Cambridge System</h2>
+        </div>
+        <button type="button" class="btn-back-map" id="back-to-map-btn">← Back to World Map</button>
+      </div>
+
+      <div class="dialogue-grid">
+        <aside class="context-box">
+          <h3>Research Hub Note</h3>
+          <p id="d-summary"></p>
+          <span class="grammar-pill" id="d-grammar"></span>
+        </aside>
+
+        <div class="chat-box">
+          <div class="step-indicator" id="step-indicator">Question 1 of 5</div>
+          <div class="chat-thread" id="chat-thread"></div>
+
+          <div class="replies-area" id="replies-area">
+            <div class="replies-label">Choose your spoken reply (click a button — no typing needed):</div>
+            <div class="reply-buttons" id="reply-buttons"></div>
+          </div>
+
+          <div class="after-dialogue-bar" id="after-dialogue-bar">
+            <button type="button" class="btn-continue-map" id="continue-map-btn">
+              All 5 Questions Done — Return to Map →
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    function buildFiveTurns(countryName, colleagueName, baseQuestions) {
+      const extraTemplates = [
+        {
+          q: `In practical engineering here in ${countryName}, what key principle should a young specialist keep in mind first?`,
+          good: `Reliable safety standards, clear calculations, and testing real prototypes before full deployment are essential in ${countryName}.`,
+          bad1: `Ignoring safety margins and skipping prototype tests is always the fastest approach.`,
+          bad2: `Engineers never need to verify measurements once a theory looks neat on paper.`
+        },
+        {
+          q: `How do teams in ${countryName} collaborate with international partners on similar technical challenges?`,
+          good: `They share experimental data, standardize technical documentation, and run joint research projects across borders.`,
+          bad1: `They refuse to share any technical findings or measurements with outside labs.`,
+          bad2: `International teamwork is impossible whenever two labs use different units of measurement.`
+        },
+        {
+          q: `Wrapping up our chat in ${countryName}: what skill helps engineers adapt to rapid technological change?`,
+          good: `Continuous learning, strong fundamentals, and clear technical communication help engineers adapt to new tools.`,
+          bad1: `Memorizing only outdated equipment without learning new principles is enough forever.`,
+          bad2: `Engineers never need to update their knowledge once they finish their first course.`
+        }
+      ];
+
+      const allFive = [...baseQuestions];
+      extraTemplates.forEach(tpl => {
+        if (allFive.length < 5) {
+          allFive.push({
+            question: tpl.q,
+            replies: [
+              {
+                text: tpl.good,
+                correct: true,
+                colleagueReply: `Great point! That fits how ${colleagueName} and the team approach work here.`
+              },
+              {
+                text: tpl.bad1,
+                correct: false,
+                coachReply: `Not quite — skipping verification or safety checks creates serious risks. Pick another button.`
+              },
+              {
+                text: tpl.bad2,
+                correct: false,
+                coachReply: `Check that again — sharing standards and testing data is what makes collaboration reliable. Try another reply.`
+              }
+            ]
+          });
+        }
+      });
+
+      return allFive.slice(0, 5);
+    }
+
+    const COUNTRIES = [
+      {
+        id: "usa",
+        unit: 4,
+        name: "United States",
+        topic: "Telecommunications: From Telegraph to Satellites",
+        grammar: "Participles & Infinitive Constructions",
+        summary: "From Morse's 1844 telegraph and Bell's telephone to geostationary satellites orbiting Earth, U.S. engineers built global instant links.",
+        colleague: "Sarah Jenkins",
+        spots: [
+          { left: 17.5, top: 41.5, w: 12, h: 17 },
+          { left: 4.5, top: 39.0, w: 6.5, h: 7.5 }
+        ],
+        turns: buildFiveTurns("the United States", "Sarah Jenkins", [
+          {
+            question: "Hi! How do geostationary satellites help connect people across continents today?",
+            replies: [
+              {
+                text: "Satellites orbiting the Earth relay digital signals and calls, letting people across continents communicate right away.",
+                correct: true,
+                colleagueReply: "Spot on! 'Orbiting' is exact here, and satellites relay global communications fast."
+              },
+              {
+                text: "Satellites orbited the Earth were built by Samuel Morse in 1844 to send dots without wires.",
+                correct: false,
+                coachReply: "Use active 'orbiting', and remember Morse sent wired telegraph messages in 1844, not satellites. Try another button."
+              },
+              {
+                text: "Engineers must to replace satellites with 19th-century telegraph wires today.",
+                correct: false,
+                coachReply: "'Must' takes a bare infinitive without 'to', and modern networks rely on satellites and fiber optics. Pick another option."
+              }
+            ]
+          },
+          {
+            question: "Who pioneered long-distance electric messaging back in 1844?",
+            replies: [
+              {
+                text: "Samuel Morse sent the first long-distance telegraph message in 1844 using a code of dots and dashes.",
+                correct: true,
+                colleagueReply: "Right! And in 1876 Alexander Graham Bell introduced the telephone."
+              },
+              {
+                text: "Alexander Graham Bell launched satellites in 1844 to replace telephone cables.",
+                correct: false,
+                coachReply: "Bell invented the telephone in 1876; Morse sent the 1844 telegraph message. Try another reply."
+              },
+              {
+                text: "Morse was succeeding in send satellite TV in 1844 without electric current.",
+                correct: false,
+                coachReply: "Use 'succeeded in sending' and remember 1844 was the wired telegraph era. Select another button."
+              }
+            ]
+          }
+        ])
+      },
+      {
+        id: "brazil",
+        unit: 8,
+        name: "Brazil",
+        topic: "Aviation: Modern Airships & Composite Aircraft",
+        grammar: "Gerund (-ing) & Prepositional Phrases",
+        summary: "Across the Amazon basin, building roads is costly and harms forests, so engineers explore hybrid airships and lightweight composites.",
+        colleague: "Carlos Mendes",
+        spots: [
+          { left: 29.0, top: 73.5, w: 11.5, h: 21 },
+          { left: 41.2, top: 71.5, w: 6.5, h: 4.5 }
+        ],
+        turns: buildFiveTurns("Brazil", "Carlos Mendes", [
+          {
+            question: "Why are engineers exploring hybrid airships instead of cutting more jungle roads in the Amazon?",
+            replies: [
+              {
+                text: "Building highways through dense jungle is expensive and damaging, whereas airships can carry cargo without long runways.",
+                correct: true,
+                colleagueReply: "Exactly! Avoiding forest damage and long runways is a huge advantage."
+              },
+              {
+                text: "Building highways is very cheap, so airships avoid to carry cargo over remote regions.",
+                correct: false,
+                coachReply: "After 'avoid', use a gerund ('carrying', not 'to carry'), and jungle highways are costly and harmful. Try again."
+              },
+              {
+                text: "Engineers stop building airships because clearing huge rainforest runways is required.",
+                correct: false,
+                coachReply: "Hybrid airships are attractive precisely because they don't need long paved runways. Pick another reply."
+              }
+            ]
+          },
+          {
+            question: "How do modern airships stay much safer than early dirigibles?",
+            replies: [
+              {
+                text: "They avoid catching fire by using non-flammable helium instead of hydrogen, and composites save fuel.",
+                correct: true,
+                colleagueReply: "Right! Non-flammable helium and composite structures make modern airships much safer."
+              },
+              {
+                text: "They fill hulls with hydrogen and heavy steel to increase fuel use.",
+                correct: false,
+                coachReply: "Modern airships use safe helium rather than hydrogen and lightweight composites. Choose another button."
+              },
+              {
+                text: "They prevent fires by avoid to use helium and flying only at night.",
+                correct: false,
+                coachReply: "Use 'avoid using' (gerund) and remember helium is non-flammable. Try another option."
+              }
+            ]
+          }
+        ])
+      },
+      {
+        id: "iceland",
+        unit: 3,
+        name: "Iceland",
+        topic: "Electricity & Renewable Energy",
+        grammar: "Present Perfect & Prefixes un- / im-",
+        summary: "Harnessing volcanic heat and rivers, Iceland generates nearly all its electricity from renewable geothermal and hydro power.",
+        colleague: "Magnús Sigurðsson",
+        spots: [
+          { left: 41.5, top: 25.5, w: 5.0, h: 4.0 },
+          { left: 45.0, top: 21.0, w: 6.5, h: 4.5 }
+        ],
+        turns: buildFiveTurns("Iceland", "Magnús Sigurðsson", [
+          {
+            question: "What have Icelandic engineers achieved with geothermal and hydroelectric energy?",
+            replies: [
+              {
+                text: "They have built geothermal and hydro stations, so nearly all electricity has been generated from renewable sources.",
+                correct: true,
+                colleagueReply: "Yes! Present Perfect captures how clean power has become standard here."
+              },
+              {
+                text: "They have build geothermal stations, though clean energy is unpossible for heating.",
+                correct: false,
+                coachReply: "Use 'built' and 'impossible' (not 'unpossible'). Try another button."
+              },
+              {
+                text: "Geothermal stations have generated toxic smoke, replacing clean power with coal.",
+                correct: false,
+                coachReply: "Geothermal and hydro stations provide clean energy rather than coal smoke. Pick another reply."
+              }
+            ]
+          },
+          {
+            question: "How does electricity reach distant towns across the island?",
+            replies: [
+              {
+                text: "High-voltage transmission lines and transformers have been set up to supply remote communities.",
+                correct: true,
+                colleagueReply: "Exact! Grid lines and transformers deliver reliable power even far from the capital."
+              },
+              {
+                text: "Distant towns have never set up lines because clean power is unpractical.",
+                correct: false,
+                coachReply: "Use 'have been set up' and 'impractical' (not 'unpractical'). Try another option."
+              },
+              {
+                text: "Power was stopped because geothermal heat cannot be regulated.",
+                correct: false,
+                coachReply: "Geothermal energy is clean and easily regulated for heating and electricity. Choose another button."
+              }
+            ]
+          }
+        ])
+      },
+      {
+        id: "uk",
+        unit: 1,
+        name: "United Kingdom",
+        topic: "Higher Education & The Cambridge System",
+        grammar: "Simple Active / Passive & there + be",
+        summary: "British universities train engineers and scientists; Cambridge combines lectures, colleges, and weekly tutorials.",
+        colleague: "Prof. Alistair Finch",
+        spots: [
+          { left: 43.0, top: 34.0, w: 5.5, h: 8.5 },
+          { left: 39.5, top: 32.5, w: 7.0, h: 6.5 }
+        ],
+        turns: buildFiveTurns("the United Kingdom", "Prof. Alistair Finch", [
+          {
+            question: "How does the Cambridge tutorial system support students alongside lectures and labs?",
+            replies: [
+              {
+                text: "Teaching is carried out through tutorials, where there is an individual tutor guiding a student's work weekly.",
+                correct: true,
+                colleagueReply: "Indeed! Close tutorial discussions and lab work shape students' training here."
+              },
+              {
+                text: "Teaching carries out through tutorials, where there are an individual tutor monthly.",
+                correct: false,
+                coachReply: "Use passive 'is carried out' and singular 'there is' with 'an individual tutor'. Try another button."
+              },
+              {
+                text: "There are no lectures or labs at Cambridge because students study for one year.",
+                correct: false,
+                coachReply: "Students attend lectures, do lab work, and have tutorials over three or four years. Pick another reply."
+              }
+            ]
+          },
+          {
+            question: "What is the difference between a college Master and the university Chancellor?",
+            replies: [
+              {
+                text: "Each college is headed by a Master, while the Chancellor is elected for life as ceremonial head.",
+                correct: true,
+                colleagueReply: "Very clear! Each self-governing college has its Master, and the Chancellor is elected for life."
+              },
+              {
+                text: "The Chancellor was elect every year instead of any college Master.",
+                correct: false,
+                coachReply: "Use 'is elected for life' for the Chancellor, while each college has a Master. Try another option."
+              },
+              {
+                text: "There is no Master in any college because tutors elect a Chancellor weekly.",
+                correct: false,
+                coachReply: "Colleges are headed by a Master, and the Chancellor is elected for life. Select another button."
+              }
+            ]
+          }
+        ])
+      },
+      {
+        id: "france",
+        unit: 7,
+        name: "France",
+        topic: "Transport for Tomorrow: TGV & Smart Vehicles",
+        grammar: "Participles & Absolute Constructions",
+        summary: "High-speed electric TGV trains and smart cars with radar sensors and windscreen displays show modern transport engineering.",
+        colleague: "Claire Moreau",
+        spots: [
+          { left: 43.2, top: 41.0, w: 5.5, h: 6.5 },
+          { left: 44.2, top: 44.0, w: 6.5, h: 4.5 }
+        ],
+        turns: buildFiveTurns("France", "Claire Moreau", [
+          {
+            question: "How do onboard radar sensors and displays help a driver in modern smart vehicles?",
+            replies: [
+              {
+                text: "Mounted above the bumper, radar sensors detect obstacles ahead, with navigation data being projected onto the windscreen.",
+                correct: true,
+                colleagueReply: "Oui! That keeps key driving info right in the driver's line of sight."
+              },
+              {
+                text: "Mounting above the bumper, radar sensors disable the brakes whenever parked.",
+                correct: false,
+                coachReply: "Use past participle 'Mounted', and remember radar detects obstacles ahead. Try another button."
+              },
+              {
+                text: "Having arriving at a motorway, drivers turn off computers because guidance only works indoors.",
+                correct: false,
+                coachReply: "Use 'Having arrived', and note that motorway driving benefits from automatic guidance. Pick another reply."
+              }
+            ]
+          },
+          {
+            question: "How do TGV trains operate between major cities?",
+            replies: [
+              {
+                text: "Operated on dedicated tracks, TGV electric trains reach over 300 km/h cleanly.",
+                correct: true,
+                colleagueReply: "Exact! Fast electric traction on dedicated lines makes TGV trains very efficient."
+              },
+              {
+                text: "TGV trains burn heavy gasoline on ordinary roads at under 50 km/h.",
+                correct: false,
+                coachReply: "TGV trains run on electricity on dedicated tracks at over 300 km/h. Try another option."
+              },
+              {
+                text: "TGV trains use bumper radar to fly across oceans like planes.",
+                correct: false,
+                coachReply: "Bumper radar and windscreen displays are for smart cars; TGVs are high-speed trains. Select another button."
+              }
+            ]
+          }
+        ])
+      },
+      {
+        id: "germany",
+        unit: 6,
+        name: "Germany",
+        topic: "New Materials: Composites & Shape-Memory Alloys",
+        grammar: "Modal Verbs, due to / thanks to",
+        summary: "Composite ceramics and nickel-titanium shape-memory alloys combine high strength, thermal shock resistance, and smart recovery.",
+        colleague: "Dr. Lukas Weber",
+        spots: [
+          { left: 45.5, top: 36.5, w: 5.5, h: 6.5 },
+          { left: 56.5, top: 33.0, w: 8.0, h: 4.5 }
+        ],
+        turns: buildFiveTurns("Germany", "Dr. Lukas Weber", [
+          {
+            question: "How do composite materials retain useful properties from different constituents?",
+            replies: [
+              {
+                text: "Thanks to combining substances without a chemical reaction, composites keep each constituent's strengths.",
+                correct: true,
+                colleagueReply: "Right! No chemical reaction occurs between the components, so their key properties remain."
+              },
+              {
+                text: "Due to strong chemical reactions, composites must to lose every property of their components.",
+                correct: false,
+                coachReply: "'Must' takes no 'to', and composites are formed without a chemical reaction. Try another button."
+              },
+              {
+                text: "Composites break immediately at room temperature because metals cannot mix with ceramics.",
+                correct: false,
+                coachReply: "Adding metallic fibers helps composite ceramics resist thermal shock. Pick another reply."
+              }
+            ]
+          },
+          {
+            question: "What is special about shape-memory alloys like nickel-titanium?",
+            replies: [
+              {
+                text: "They can change shape when heated and return to their original form when cooled.",
+                correct: true,
+                colleagueReply: "Exact! Returning to their original shape makes smart actuators and components possible."
+              },
+              {
+                text: "They may not change shape at any temperature, so engineers never use them.",
+                correct: false,
+                coachReply: "Shape-memory alloys are used specifically for their temperature-triggered shape recovery. Try another option."
+              },
+              {
+                text: "They replace all alloys because ordinary metals are always softer than glass.",
+                correct: false,
+                coachReply: "Focus on shape recovery when cooled or heated. Select another button."
+              }
+            ]
+          }
+        ])
+      },
+      {
+        id: "switzerland",
+        unit: 11,
+        name: "Switzerland",
+        topic: "Superconductivity & Zero Resistance at CERN",
+        grammar: "Complex Subject & Complex Object",
+        summary: "Near Geneva, cryogenic cooling lets superconducting magnets carry large currents with zero electrical resistance.",
+        colleague: "Dr. Henri Favre",
+        spots: [
+          { left: 45.2, top: 41.2, w: 4.0, h: 4.0 },
+          { left: 54.5, top: 47.5, w: 8.5, h: 4.5 }
+        ],
+        turns: buildFiveTurns("Switzerland", "Dr. Henri Favre", [
+          {
+            question: "Why is superconductivity so valuable for high-field magnets in physics research?",
+            replies: [
+              {
+                text: "Scientists know cooled superconductors to lose all electrical resistance, preventing resistive heat loss.",
+                correct: true,
+                colleagueReply: "Exactly! Zero resistance means no heat generated by electrical resistance in the coils."
+              },
+              {
+                text: "Physicists consider superconductors produce extra heat because resistance rises near absolute zero.",
+                correct: false,
+                coachReply: "Use 'to produce' after 'consider', and remember resistance drops to zero, not rises. Try another button."
+              },
+              {
+                text: "Superconductors are believed to operating at 5,000°C without cooling at CERN.",
+                correct: false,
+                coachReply: "Use 'are believed to operate', and CERN magnets require ultra-cold cryogenic cooling. Pick another reply."
+              }
+            ]
+          },
+          {
+            question: "What could room-temperature superconductors enable in the future?",
+            replies: [
+              {
+                text: "They could enable lossless power transmission and advanced transport without extreme cooling costs.",
+                correct: true,
+                colleagueReply: "Precisely! Lossless energy transport is a major long-term goal."
+              },
+              {
+                text: "They expect lossless transmission become impossible when resistance is zero.",
+                correct: false,
+                coachReply: "Use 'expect ... to become', and zero resistance enables lossless flow. Try another option."
+              },
+              {
+                text: "They expect liquid helium to heat wires above melting point.",
+                correct: false,
+                coachReply: "Liquid helium provides ultra-low temperature cooling, not heating. Select another button."
+              }
+            ]
+          }
+        ])
+      },
+      {
+        id: "finland",
+        unit: 2,
+        name: "Finland",
+        topic: "Environment Protection & Urban Ecology",
+        grammar: "Continuous Forms & Degrees of Comparison",
+        summary: "Even amid northern forests and lakes, cities monitor winter heating emissions and develop cleaner renewable bioenergy.",
+        colleague: "Dr. Aino Lindqvist",
+        spots: [
+          { left: 50.0, top: 23.5, w: 6.5, h: 12.5 },
+          { left: 58.5, top: 19.5, w: 6.5, h: 4.5 }
+        ],
+        turns: buildFiveTurns("Finland", "Dr. Aino Lindqvist", [
+          {
+            question: "Why is urban air often cleaner in summer than in winter in northern cities?",
+            replies: [
+              {
+                text: "In winter, heating systems work harder, raising smoke and sulphur dioxide levels more than in summer.",
+                correct: true,
+                colleagueReply: "Right! Winter heating increases emissions compared with summer."
+              },
+              {
+                text: "The air is becoming more cleaner in winter because heating is turned off.",
+                correct: false,
+                coachReply: "Use 'cleaner' (no 'more cleaner'), and heating runs more in winter. Try another button."
+              },
+              {
+                text: "Air quality is the most bad in summer because forests stop producing oxygen.",
+                correct: false,
+                coachReply: "Use 'the worst' (not 'the most bad') and note winter heating emissions. Pick another reply."
+              }
+            ]
+          },
+          {
+            question: "How is international cooperation applied in environmental protection?",
+            replies: [
+              {
+                text: "Because pollution crosses borders, clean heating and bioenergy solutions are developed through joint work.",
+                correct: true,
+                colleagueReply: "Yes! Shared research and cleaner bioenergy help tackle cross-border pollution."
+              },
+              {
+                text: "Pollution never crosses borders, so countries never cooperate on ecology.",
+                correct: false,
+                coachReply: "Pollution crosses borders easily, making international cooperation important. Try another option."
+              },
+              {
+                text: "No experimental work is carrying out because urban climate never changes.",
+                correct: false,
+                coachReply: "Use passive 'is being carried out'—researchers actively test cleaner energy. Select another button."
+              }
+            ]
+          }
+        ])
+      },
+      {
+        id: "kazakhstan",
+        unit: 12,
+        name: "Kazakhstan",
+        topic: "Space Exploration, Baikonur & Microgravity",
+        grammar: "Subjunctive Mood & Conditionals",
+        summary: "From Baikonur Cosmodrome, launch vehicles support orbital research in microgravity conditions impossible to sustain on Earth.",
+        colleague: "Timur Kassymov",
+        spots: [
+          { left: 66.0, top: 37.5, w: 14.5, h: 10.0 },
+          { left: 70.5, top: 29.0, w: 8.5, h: 4.5 }
+        ],
+        turns: buildFiveTurns("Kazakhstan", "Timur Kassymov", [
+          {
+            question: "Why is microgravity in orbit valuable for materials and crystal research?",
+            replies: [
+              {
+                text: "If strong gravity and convection were present, liquid mixtures would separate and crystals would grow with defects.",
+                correct: true,
+                colleagueReply: "Exactly! Reduced gravitational convection allows cleaner crystal growth and long-duration experiments."
+              },
+              {
+                text: "Were weightlessness easy on Earth, crews would not needed to launch orbital labs.",
+                correct: false,
+                coachReply: "After 'would not', use base verb 'need' rather than 'needed'. Try another button."
+              },
+              {
+                text: "Convection improves crystal growth in space because gravity is stronger in orbit.",
+                correct: false,
+                coachReply: "Microgravity reduces buoyancy-driven convection compared with Earth. Pick another reply."
+              }
+            ]
+          },
+          {
+            question: "How did rocket launches from Baikonur shape human spaceflight?",
+            replies: [
+              {
+                text: "If engineers had not developed reliable launch vehicles here, orbital stations would never have been built.",
+                correct: true,
+                colleagueReply: "Spot on! Third conditional fits that historic engineering milestone well."
+              },
+              {
+                text: "If engineers did not develop rockets yesterday, stations will never be built today.",
+                correct: false,
+                coachReply: "Use Past Perfect ('had not developed') and 'would never have been built'. Try another option."
+              },
+              {
+                text: "Rockets never launched from Baikonur after the first orbital flights.",
+                correct: false,
+                coachReply: "Baikonur has been a central launch site since early spaceflight and continues supporting orbital missions. Select another button."
+              }
+            ]
+          }
+        ])
+      },
+      {
+        id: "china",
+        unit: 10,
+        name: "China",
+        topic: "Lasers & Optical Technology",
+        grammar: "Functions of the Infinitive",
+        summary: "Coherent monochromatic laser beams cut and weld with high precision, assist surgery, and carry data through glass fibers.",
+        colleague: "Dr. Mei Lin",
+        spots: [
+          { left: 76.5, top: 45.0, w: 16.0, h: 21.0 },
+          { left: 85.0, top: 33.0, w: 6.5, h: 4.5 }
+        ],
+        turns: buildFiveTurns("China", "Dr. Mei Lin", [
+          {
+            question: "What makes a laser beam useful for precision cutting and welding?",
+            replies: [
+              {
+                text: "A laser produces a narrow, coherent monochromatic beam that lenses can focus to cut or weld accurately.",
+                correct: true,
+                colleagueReply: "Right! Focusing a coherent beam delivers high energy density to a small spot."
+              },
+              {
+                text: "To scatter incoherent waves everywhere is what lasers do to weld delicate parts.",
+                correct: false,
+                coachReply: "Ordinary light scatters widely; lasers produce a focused, coherent beam. Try another button."
+              },
+              {
+                text: "Lasers scatter light randomly so factories cannot cut steel.",
+                correct: false,
+                coachReply: "Precision optics focus laser beams for cutting and welding metals. Pick another reply."
+              }
+            ]
+          },
+          {
+            question: "How are lasers used in medicine and high-speed communications?",
+            replies: [
+              {
+                text: "Low-power beams aid delicate eye surgery, while optical pulses travel through glass fibers with low loss.",
+                correct: true,
+                colleagueReply: "Exact! Optical fibers carry high-speed signals long distances with minimal attenuation."
+              },
+              {
+                text: "Surgeons use high-power metal lasers to thicken impure copper wires.",
+                correct: false,
+                coachReply: "Eye surgery uses low-power precision lasers, and data travels through glass fibers. Try another option."
+              },
+              {
+                text: "Glass fibers block laser pulses completely after one meter.",
+                correct: false,
+                coachReply: "Low-loss optical fibers transmit laser pulses over long distances. Select another button."
+              }
+            ]
+          }
+        ])
+      },
+      {
+        id: "japan",
+        unit: 5,
+        name: "Japan",
+        topic: "Computers, Microprocessors & Optical Chips",
+        grammar: "Attributive (Relative) Clauses",
+        summary: "From room-sized vacuum-tube machines to silicon chips in cleanrooms, computing explores optical-electronic architectures.",
+        colleague: "Kenji Takahashi",
+        spots: [
+          { left: 89.0, top: 43.0, w: 5.5, h: 14.0 },
+          { left: 96.5, top: 48.0, w: 6.5, h: 4.5 }
+        ],
+        turns: buildFiveTurns("Japan", "Kenji Takahashi", [
+          {
+            question: "Why do semiconductor plants require strict cleanroom conditions?",
+            replies: [
+              {
+                text: "Because factories where microscopic chips are made need extreme cleanliness so tiny circuits stay reliable.",
+                correct: true,
+                colleagueReply: "Exactly! Microscopic particles can damage fine circuit structures during manufacturing."
+              },
+              {
+                text: "Because vacuum tubes what filled rooms require zero cleanliness.",
+                correct: false,
+                coachReply: "Use 'which/that' (not 'what') for relative clauses, and note cleanrooms protect microscopic chips. Try another button."
+              },
+              {
+                text: "Because chips only work when covered in dust.",
+                correct: false,
+                coachReply: "Ultra-clean environments are essential for reliable microchips. Pick another reply."
+              }
+            ]
+          },
+          {
+            question: "What do optical-electronic processors aim to improve in future computing?",
+            replies: [
+              {
+                text: "Processors in which light replaces electric signals could overcome certain physical limits and run faster.",
+                correct: true,
+                colleagueReply: "Spot on! Using optical signals is researched to boost speed and efficiency."
+              },
+              {
+                text: "Single-step machines who use vacuum tubes are already faster than optical processors.",
+                correct: false,
+                coachReply: "Use 'which/that' (not 'who') for machines. Try another option."
+              },
+              {
+                text: "Supercomputers slow down whenever they run many calculations.",
+                correct: false,
+                coachReply: "Supercomputers are designed to perform large numbers of calculations rapidly. Select another button."
+              }
+            ]
+          }
+        ])
+      },
+      {
+        id: "australia",
+        unit: 9,
+        name: "Australia",
+        topic: "Ocean Exploration & Autonomous Submersibles",
+        grammar: "Passive Voice & Prepositional Passives",
+        summary: "Deep-sea pressure rises by roughly one atmosphere every ten meters, requiring strong hulls and acoustic underwater links.",
+        colleague: "Dr. Liam O'Connor",
+        spots: [
+          { left: 91.5, top: 85.0, w: 10.5, h: 16.5 },
+          { left: 83.5, top: 82.5, w: 7.5, h: 4.5 }
+        ],
+        turns: buildFiveTurns("Australia", "Dr. Liam O'Connor", [
+          {
+            question: "How are deep-sea submersibles engineered to withstand high hydrostatic pressure?",
+            replies: [
+              {
+                text: "They are built from thick titanium alloys or syntactic foam so high external pressure will not crush them.",
+                correct: true,
+                colleagueReply: "Right on! High strength-to-weight hulls are essential as pressure rises with depth."
+              },
+              {
+                text: "They are made of thin glass because pressure drops every ten meters.",
+                correct: false,
+                coachReply: "Hydrostatic pressure increases with depth—about 1 atm every 10 meters. Try another button."
+              },
+              {
+                text: "They never go deeper than ten meters because water has no pressure.",
+                correct: false,
+                coachReply: "Deep-sea vehicles are built to operate at much greater depths. Pick another reply."
+              }
+            ]
+          },
+          {
+            question: "Why are acoustic signals used underwater instead of radio waves?",
+            replies: [
+              {
+                text: "Because radio waves are absorbed quickly by seawater, acoustic signals are relied upon underwater.",
+                correct: true,
+                colleagueReply: "Exactly! Prepositional passive ('are relied upon') and acoustic telemetry fit great here."
+              },
+              {
+                text: "Much attention are paid to radio waves because sound vanishes at one meter.",
+                correct: false,
+                coachReply: "Use singular 'is paid', and remember seawater absorbs radio waves rapidly. Try another option."
+              },
+              {
+                text: "Unmanned underwater robots are never used in marine research.",
+                correct: false,
+                coachReply: "Autonomous underwater vehicles are widely used for ocean mapping and inspection. Select another button."
+              }
+            ]
+          }
+        ])
+      }
+    ];
+
+    const STORAGE_KEY = "expedition_img_5turns_v1";
+
+    let state = {
+      visited: [],
+      completed: [],
+      activeCountryId: null,
+      turnIndex: 0,
+      chatHistory: [],
+      finishedCurrent: false
+    };
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed.visited)) {
+            state.visited = parsed.visited.filter(id => COUNTRIES.some(c => c.id === id));
+          }
+          if (Array.isArray(parsed.completed)) {
+            state.completed = parsed.completed.filter(id => COUNTRIES.some(c => c.id === id));
+          }
+        }
+      } catch (e) {}
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          visited: state.visited,
+          completed: state.completed
+        }));
+      } catch (e) {}
+    }
+
+    function updateBadges() {
+      document.getElementById("visited-count").textContent = state.visited.length;
+      document.getElementById("completed-count").textContent = state.completed.length;
+    }
+
+    function renderHotspots() {
+      const layer = document.getElementById("hotspots-layer");
+      layer.innerHTML = "";
+
+      COUNTRIES.forEach(c => {
+        const isDone = state.completed.includes(c.id);
+        c.spots.forEach((sp, idx) => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = `hotspot-btn${isDone && idx === 0 ? " completed-spot" : ""}`;
+          btn.style.left = `${sp.left}%`;
+          btn.style.top = `${sp.top}%`;
+          btn.style.width = `${sp.w}%`;
+          btn.style.height = `${sp.h}%`;
+          btn.title = `${c.name} — Click to start 5-question dialogue`;
+          btn.setAttribute("aria-label", `${c.name}: ${c.topic}`);
+          btn.addEventListener("click", () => startCountryDialogue(c.id));
+          layer.appendChild(btn);
+        });
+      });
+    }
+
+    function startCountryDialogue(countryId) {
+      const country = COUNTRIES.find(c => c.id === countryId);
+      if (!country) return;
+
+      if (!state.visited.includes(country.id)) {
+        state.visited.push(country.id);
+        saveState();
+        updateBadges();
+      }
+
+      state.activeCountryId = country.id;
+      state.turnIndex = 0;
+      state.finishedCurrent = false;
+      state.chatHistory = [
+        {
+          role: "colleague",
+          sender: `${country.colleague} (${country.name})`,
+          text: country.turns[0].question,
+          styleClass: ""
+        }
+      ];
+
+      document.getElementById("d-country-tag").textContent = `${country.name} • Unit ${country.unit}`;
+      document.getElementById("d-topic-title").textContent = country.topic;
+      document.getElementById("d-summary").textContent = country.summary;
+      document.getElementById("d-grammar").textContent = `Focus: ${country.grammar}`;
+      document.getElementById("after-dialogue-bar").classList.remove("visible");
+
+      renderChatAndReplies(country);
+
+      document.getElementById("map-section").style.display = "none";
+      document.getElementById("dialogue-panel").classList.add("active");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function renderChatAndReplies(country) {
+      const stepEl = document.getElementById("step-indicator");
+      stepEl.textContent = state.finishedCurrent
+        ? `Dialogue Completed (5 of 5 questions in ${country.name})`
+        : `Question ${state.turnIndex + 1} of ${country.turns.length}`;
+
+      const thread = document.getElementById("chat-thread");
+      thread.innerHTML = "";
+
+      state.chatHistory.forEach(item => {
+        const row = document.createElement("div");
+        row.className = `msg-row ${item.role} ${item.styleClass || ""}`;
+
+        const sender = document.createElement("div");
+        sender.className = "msg-sender";
+        sender.textContent = item.sender;
+
+        const bubble = document.createElement("div");
+        bubble.className = "msg-bubble";
+        bubble.textContent = item.text;
+
+        row.appendChild(sender);
+        row.appendChild(bubble);
+        thread.appendChild(row);
+      });
+
+      thread.scrollTop = thread.scrollHeight;
+
+      const repliesArea = document.getElementById("replies-area");
+      const buttonsContainer = document.getElementById("reply-buttons");
+      buttonsContainer.innerHTML = "";
+
+      if (state.finishedCurrent) {
+        repliesArea.style.display = "none";
+        document.getElementById("after-dialogue-bar").classList.add("visible");
+        return;
+      }
+
+      repliesArea.style.display = "block";
+      const currentTurn = country.turns[state.turnIndex];
+
+      currentTurn.replies.forEach((rep, idx) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "reply-btn";
+        const label = String.fromCharCode(65 + idx);
+        btn.textContent = `${label}. ${rep.text}`;
+        btn.addEventListener("click", () => handleReplyClick(btn, rep, country));
+        buttonsContainer.appendChild(btn);
+      });
+    }
+
+    function handleReplyClick(btnElement, replyObj, country) {
+      if (state.finishedCurrent) return;
+
+      state.chatHistory.push({
+        role: "user",
+        sender: "You",
+        text: replyObj.text,
+        styleClass: ""
+      });
+
+      if (replyObj.correct) {
+        btnElement.classList.add("picked-right");
+        document.querySelectorAll("#reply-buttons .reply-btn").forEach(b => {
+          b.disabled = true;
+        });
+
+        state.chatHistory.push({
+          role: "colleague",
+          sender: country.colleague,
+          text: replyObj.colleagueReply,
+          styleClass: "ok-reply"
+        });
+
+        if (state.turnIndex + 1 < country.turns.length) {
+          state.turnIndex += 1;
+          state.chatHistory.push({
+            role: "colleague",
+            sender: `${country.colleague} (${country.name})`,
+            text: country.turns[state.turnIndex].question,
+            styleClass: ""
+          });
+          renderChatAndReplies(country);
+        } else {
+          state.finishedCurrent = true;
+          if (!state.completed.includes(country.id)) {
+            state.completed.push(country.id);
+            saveState();
+            updateBadges();
+            renderHotspots();
+          }
+          renderChatAndReplies(country);
+        }
+      } else {
+        btnElement.classList.add("picked-wrong");
+        btnElement.disabled = true;
+        state.chatHistory.push({
+          role: "colleague",
+          sender: country.colleague,
+          text: replyObj.coachReply,
+          styleClass: "coach-reply"
+        });
+        renderChatAndReplies(country);
+      }
+    }
+
+    function goBackToMap() {
+      state.activeCountryId = null;
+      document.getElementById("dialogue-panel").classList.remove("active");
+      document.getElementById("map-section").style.display = "block";
+      renderHotspots();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function resetProgress() {
+      state.visited = [];
+      state.completed = [];
+      state.activeCountryId = null;
+      saveState();
+      updateBadges();
+      goBackToMap();
+    }
+
+    document.getElementById("back-to-map-btn").addEventListener("click", goBackToMap);
+    document.getElementById("continue-map-btn").addEventListener("click", goBackToMap);
+    document.getElementById("reset-btn").addEventListener("click", resetProgress);
+
+    loadState();
+    updateBadges();
+    renderHotspots();
+  </script>
+</body>
+</html>
